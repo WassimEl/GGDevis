@@ -41,6 +41,20 @@ td.p input{text-align:right;font-weight:600}td.x{text-align:right}
 td.x button{background:transparent;color:var(--mut);padding:2px 8px;font-size:16px}
 .tot{display:flex;justify-content:flex-end;gap:18px;align-items:baseline;margin-top:16px;font-size:14px}
 .tot strong{font-size:26px;color:var(--acc2)}
+.seg{display:flex;gap:6px;margin:0 0 14px;padding:4px;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+.seg button{flex:1;background:transparent;color:var(--mut)}.seg button[aria-pressed=true]{background:var(--acc);color:#fff}
+body[data-mode=devis] #fiche{display:none}body[data-mode=fiche] #quote{display:none}
+#fiche h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc2);margin:22px 0 8px}
+#fiche ul{margin:0;padding:0;list-style:none;font-size:14px}#fiche li{padding:5px 0;border-bottom:1px solid var(--line)}#fiche li b{display:inline-block;min-width:130px;color:var(--mut);font-weight:600;font-size:13px}
+#fiche td.t{width:32%}#fiche td.o{width:22%}#fiche td.r{width:130px;text-align:center}
+.chip{font:inherit;font-weight:800;font-size:12px;border-radius:999px;padding:4px 12px;background:transparent;border:1px solid var(--line);color:var(--mut);cursor:pointer}
+.chip.ok{background:#1E6B46;border-color:#1E6B46;color:#fff}.chip.bad{background:#7F2D2D;border-color:#7F2D2D;color:#fff}
+#fiche textarea.f,#fiche input.f{width:100%;background:var(--bg);color:inherit;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit}
+#fiche textarea.f{min-height:80px;resize:vertical}
+.sign{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-top:24px}.sign>div{flex:1;min-width:150px}
+.verdict{font-size:18px;font-weight:800}.verdict.ok{color:var(--ok)}.verdict.bad{color:#F08A8A}
+@media print{.chip{border:0!important;background:transparent!important;color:#171716!important;padding:0}.chip.ok{color:#1E8E5A!important}.chip.bad{color:#B42323!important}
+#fiche textarea.f,#fiche input.f{border:0!important;background:transparent!important;padding:2px 0}}
 .note{margin-top:18px;font-size:12px;color:var(--mut);white-space:pre-wrap}
 .empty{padding:34px;text-align:center;color:var(--mut)}
 @media print{
@@ -52,6 +66,7 @@ body{background:#fff}.panel,.no-print,td.x,th.x{display:none!important}.wrap{dis
 <body>
 <div class="wrap">
  <section class="panel no-print" aria-label="Import">
+  <div class="seg" role="group" aria-label="Document"><button id="tabD" aria-pressed="true">Devis</button><button id="tabF" aria-pressed="false">Fiche de test</button></div>
   <h1>Devis depuis PCPartPicker</h1>
   <p class="sub">Colle ta liste, l'outil lit les composants et les prix.</p>
   <label for="raw">Liste PCPartPicker (export Markdown ou texte copié depuis la page)</label>
@@ -80,6 +95,24 @@ body{background:#fff}.panel,.no-print,td.x,th.x{display:none!important}.wrap{dis
    <div class="meta"><div>Devis <b id="qn">—</b></div><div id="qd"></div><div id="qc"></div><div id="qv"></div></div>
   </div>
   <div id="body"></div>
+ </section>
+ <section class="quote" id="fiche" aria-label="Fiche de test">
+  <div class="qh">
+   <div class="brand"><img id="lg2" class="lg" alt="Logo GGBUILD"><div><h2>GGBUILD</h2><small>Fiche de test &amp; contrôle qualité</small></div></div>
+   <div class="meta"><div>Commande <b id="fn">—</b></div><div id="fd"></div><div id="fc"></div></div>
+  </div>
+  <h3>Configuration testée</h3><ul id="fcfg"></ul>
+  <h3>Tests réalisés</h3><div id="ftests"></div>
+  <div class="bar no-print"><button class="ghost" id="addt">Ajouter un test</button></div>
+  <div class="no-print" id="imp"><h3>Importer le rapport UserDiag</h3>
+   <input type="file" id="ffile" accept=".txt,text/plain" aria-label="Fichier de rapport UserDiag (.txt)">
+   <details><summary style="cursor:pointer;color:var(--mut);margin-top:8px">ou colle le texte du rapport</summary><textarea class="f" id="fpaste" placeholder="Colle ici le contenu du fichier .txt exporté par UserDiag"></textarea><div class="bar"><button id="fread">Lire le rapport</button></div></details>
+   <div id="fmsg" style="font-size:13px;margin-top:8px;color:var(--ok)"></div></div>
+  <h3>Analyse du rapport UserDiag</h3><ul id="fana"></ul>
+  <h3>Rapport de diagnostic (lien ou référence)</h3>
+  <input class="f" id="flink" placeholder="Colle ici le lien du rapport UserDiag" aria-label="Lien du rapport">
+  <h3>Observations</h3><textarea class="f" id="fobs" placeholder="Températures, réglages BIOS (EXPO/XMP), remarques…" aria-label="Observations"></textarea>
+  <div class="sign"><div><label for="fby">Testé par</label><input class="f" id="fby" placeholder="Nom"></div><div><div style="color:var(--mut);font-size:12px">Verdict</div><div id="verd" class="verdict">En cours</div></div></div>
  </section>
 </div>
 <script>
@@ -111,6 +144,7 @@ function parse(text){
  return rows;
 }
 let rows=[];
+let tests=[['Diagnostic UserDiag (rapide / long / extrême)','UserDiag','',''],['Température max processeur','UserDiag','',''],['Température max carte graphique','UserDiag','',''],['Stabilité sous charge (CPU + GPU)','UserDiag','',''],['Santé du stockage (SSD)','UserDiag','','']].map(a=>({t:a[0],o:a[1],v:a[2],r:a[3]}));
 const fmt=n=>eur.format(n||0);
 const numFull=()=>$('#num').value.trim()?'GBCMD-'+$('#num').value.trim():'';
 function total(){return rows.reduce((a,r)=>a+(+r.price||0),0)-(num($('#rem').value)||0)}
@@ -123,15 +157,60 @@ function render(){
  `<div class="tot"><span>Total</span><strong id="tt">${fmt(total())}</strong></div><div class="note">${($('#nt').value||'').replace(/</g,'&lt;')}</div>`;
 }
 function fit(){document.querySelectorAll('td textarea').forEach(t=>{t.style.height='auto';t.style.height=t.scrollHeight+2+'px'})}
+let analyse=[];
+const SEUIL={cpu:95,gpu:90,hot:105,sante:80,perf:70};
+function parseUD(t){
+ t=t.replace(/\r/g,'');const S={};
+ t.split(/-{20,}\n>_ /).slice(1).forEach(p=>{const i=p.indexOf('\n');S[p.slice(0,i).trim().toUpperCase()]=p.slice(i+1).replace(/^-{20,}\n/,'')});
+ const kv=(b,k)=>{const m=(b||'').match(new RegExp('^\\s*'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*:\\s*(.+)$','mi'));return m?m[1].trim():''};
+ const temps=v=>(v.match(/\d+(?:[.,]\d+)?(?=\s*°C)/g)||[]).map(x=>parseFloat(x.replace(',','.')));
+ const pct=v=>{const m=v.match(/\((\d+)\s*%\)/);return m?+m[1]:null};
+ const out={tests:[],analyse:[],link:''};
+ const id=t.match(/userdiag\.com\/id\/([\w-]+)/);if(id)out.link='https://userdiag.com/id/'+id[1];
+ out.analyse=(S['ANALYSE DU RAPPORT']||'').split('\n').map(x=>x.trim()).filter(Boolean);
+ const D=S['DIAG']||'',dt=kv(D,'Type de diagnostic'),dur=kv(D,'Durée du diagnostic'),dd=(kv(D,'Effectué il y a').match(/\(([^)]+)\)/)||[])[1]||'';
+ out.tests.push({t:'Diagnostic UserDiag',o:'UserDiag',v:[dt,dur,dd].filter(Boolean).join(' · '),r:''});
+ const C=S['PROCESSEUR']||'',ct=temps(kv(C,'Températures min/en jeu/max')),cn=kv(C,'Nom').replace(/^(Intel|AMD)\s+/i,'').replace(/^Core\s+/i,'');
+ if(ct.length)out.tests.push({t:'Température processeur',o:'UserDiag',v:cn+' : '+ct[ct.length-1]+' °C max (repos '+ct[0]+' °C)',r:ct[ct.length-1]>=SEUIL.cpu?'bad':'ok'});
+ const G=(S['CARTE GRAPHIQUE']||'').split(/\n(?=GPU \d)/).filter(b=>/^GPU \d/.test(b)),gp=G.find(b=>temps(kv(b,'Températures min/en jeu/max')).length);
+ let gperf=null;
+ if(gp){const gt=temps(kv(gp,'Températures min/en jeu/max')),hs=temps(kv(gp,'Hotspot min/en jeu/max')),mx=gt[gt.length-1],hm=hs.length?hs[hs.length-1]:0;gperf=pct(kv(gp,'Niveau de performance'));
+  out.tests.push({t:'Température carte graphique',o:'UserDiag',v:kv(gp,'Modèle').replace(/^(AMD|NVIDIA)\s+/i,'')+' : '+mx+' °C max'+(hm?', hotspot '+hm+' °C':''),r:(mx>=SEUIL.gpu||hm>=SEUIL.hot)?'bad':'ok'})}
+ const cperf=pct(kv(C,'Niveau de performance')),th=/surchauffe|throttl|baisse des performances/i.test(out.analyse.join(' '));
+ if(cperf!==null||gperf!==null){const bad=th||(cperf!==null&&cperf<SEUIL.perf)||(gperf!==null&&gperf<SEUIL.perf);
+  out.tests.push({t:'Stabilité sous charge',o:'UserDiag',v:'Performance CPU '+(cperf!==null?cperf+' %':'n/d')+' · GPU '+(gperf!==null?gperf+' %':'n/d'),r:bad?'bad':'ok'})}
+ const M=S['MÉMOIRE']||'',mt=kv(M,'Taille totale');
+ if(mt){const com=kv(M,'Commentaire');out.tests.push({t:'Mémoire vive',o:'UserDiag',v:mt+' '+kv(M,'Type de mémoire')+' '+kv(M,'Fréquence actuelle')+(com?' · '+com:''),r:/activ/i.test(com)?'ok':''})}
+ (S['STOCKAGE']||'').split(/\n(?=STOCKAGE \d)/).filter(b=>/^STOCKAGE \d/.test(b)).forEach(b=>{
+  const h=kv(b,'État actuel (santé)'),p=pct(h);out.tests.push({t:'Santé du stockage',o:'UserDiag',v:kv(b,'Modèle')+' ('+kv(b,'Capacité')+') : '+(h||'n/d'),r:p===null?'':(p>=SEUIL.sante?'ok':'bad')})});
+ const w=t.match(/Windows Hardware Errors \(WHEA\)[\s\S]*?Total Errors\s*\|\s*Min:\s*(\d+)\s*\|\s*Max:\s*(\d+)/);
+ if(w)out.tests.push({t:'Erreurs matérielles (WHEA)',o:'UserDiag',v:w[2]+' erreur'+(+w[2]>1?'s':''),r:+w[2]===0?'ok':'bad'});
+ return out}
+function applyUD(txt){
+ const r=parseUD(txt);
+ if(r.tests.length<2){$('#fmsg').style.color='#F08A8A';$('#fmsg').textContent='Rapport non reconnu. Utilise le fichier .txt exporté par UserDiag.';return}
+ tests=r.tests;analyse=r.analyse;if(r.link)$('#flink').value=r.link;
+ $('#fmsg').style.color='var(--ok)';$('#fmsg').textContent='Rapport lu : '+tests.length+' contrôles remplis. Vérifie chaque état (OK / À revoir) avant d\'imprimer.';
+ renderFiche();save()}
+function renderFiche(){
+ $('#fana').innerHTML=analyse.length?analyse.map(a=>'<li>'+a.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</li>').join(''):'<li style="color:var(--mut)">Aucune analyse importée.</li>';
+ $('#fcfg').innerHTML=rows.filter(r=>r.cat!=='Custom').map(r=>`<li><b>${FR[r.cat]||r.cat}</b>${r.item.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</li>`).join('')||'<li style="color:var(--mut)">Importe une liste PCPartPicker pour afficher la configuration.</li>';
+ const lab={ok:'OK ✓',bad:'À revoir',"":'—'};
+ $('#ftests').innerHTML='<table><thead><tr><th>Test</th><th>Outil</th><th>Résultat / valeur</th><th style="text-align:center">État</th><th class="x"></th></tr></thead><tbody>'+tests.map((x,i)=>`<tr><td class="t"><input data-ti="${i}" data-tk="t" value="${x.t.replace(/"/g,'&quot;')}" aria-label="Test"></td><td class="o"><input data-ti="${i}" data-tk="o" value="${x.o.replace(/"/g,'&quot;')}" aria-label="Outil"></td><td><input data-ti="${i}" data-tk="v" value="${x.v.replace(/"/g,'&quot;')}" placeholder="Ex. 74 °C max" aria-label="Résultat"></td><td class="r"><button class="chip ${x.r}" data-tc="${i}">${lab[x.r]}</button></td><td class="x"><button data-td="${i}" aria-label="Retirer le test">×</button></td></tr>`).join('')+'</tbody></table>';
+ const v=$('#verd'),n=tests.filter(x=>x.r).length;
+ const bad=tests.some(x=>x.r==='bad'),all=tests.length&&tests.every(x=>x.r==='ok');
+ v.textContent=bad?'À revoir':all?'Conforme':n?'En cours':'En cours';v.className='verdict '+(bad?'bad':all?'ok':'');
+}
 function head(){
  $('#qn').textContent=numFull()||'—';
  $('#qd').textContent='Date : '+new Intl.DateTimeFormat('fr-BE',{timeZone:'Europe/Brussels',dateStyle:'long'}).format(new Date());
  $('#qc').textContent=$('#cli').value?'Client : '+$('#cli').value:'';
+ $('#fn').textContent=numFull()||'—';$('#fd').textContent=$('#qd').textContent;$('#fc').textContent=$('#qc').textContent;
  $('#qv').textContent=$('#val').value?'Valable '+$('#val').value+' jours':'';
 }
-function save(){try{localStorage.setItem('ggb-devis',JSON.stringify({raw:$('#raw').value,cli:$('#cli').value,num:$('#num').value,val:$('#val').value,rem:$('#rem').value,nt:$('#nt').value,rows}))}catch(e){}}
+function save(){try{localStorage.setItem('ggb-devis',JSON.stringify({raw:$('#raw').value,cli:$('#cli').value,num:$('#num').value,val:$('#val').value,rem:$('#rem').value,nt:$('#nt').value,rows,tests,analyse,flink:$('#flink').value,fobs:$('#fobs').value,fby:$('#fby').value}))}catch(e){}}
 function say(t,err){const m=$('#msg');m.textContent=t;m.className=err?'err':''}
-function refresh(){head();render();fit();save()}
+function refresh(){head();render();renderFiche();fit();save()}
 window.addEventListener('beforeprint',fit);window.addEventListener('resize',fit);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit)
 $('#go').onclick=()=>{rows=parse($('#raw').value);
  if(!rows.length){say('Aucun composant trouvé. Colle l\'export Markdown de PCPartPicker ou le texte de la page.',1)}
@@ -143,12 +222,23 @@ $('#body').addEventListener('input',e=>{const t=e.target,i=t.dataset.i;if(i===un
 $('#body').addEventListener('click',e=>{const d=e.target.dataset.del;if(d===undefined)return;rows.splice(+d,1);refresh()});
 $('#add').onclick=()=>{rows.push({cat:'Custom',item:'Nouvelle ligne',price:0});refresh()};
 ['#cli','#num','#val','#rem','#nt'].forEach(s=>$(s).addEventListener('input',refresh));
+function mode(m){document.body.dataset.mode=m;$('#tabD').setAttribute('aria-pressed',m==='devis');$('#tabF').setAttribute('aria-pressed',m==='fiche');fit()}
+$('#tabD').onclick=()=>mode('devis');$('#tabF').onclick=()=>mode('fiche');mode('devis');
+$('#ftests').addEventListener('input',e=>{const i=e.target.dataset.ti;if(i===undefined)return;tests[i][e.target.dataset.tk]=e.target.value;renderVerdict();save()});
+function renderVerdict(){const v=$('#verd'),bad=tests.some(x=>x.r==='bad'),all=tests.length&&tests.every(x=>x.r==='ok');v.textContent=bad?'À revoir':all?'Conforme':'En cours';v.className='verdict '+(bad?'bad':all?'ok':'')}
+$('#ftests').addEventListener('click',e=>{const c=e.target.dataset.tc,d=e.target.dataset.td;
+ if(c!==undefined){const x=tests[c];x.r=x.r===''?'ok':x.r==='ok'?'bad':'';renderFiche();save()}
+ if(d!==undefined){tests.splice(+d,1);renderFiche();save()}});
+$('#ffile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>applyUD(String(r.result));r.readAsText(f)});
+$('#fread').onclick=()=>applyUD($('#fpaste').value);
+$('#addt').onclick=()=>{tests.push({t:'Nouveau test',o:'',v:'',r:''});renderFiche();save()};
+['#flink','#fobs','#fby'].forEach(q=>$(q).addEventListener('input',save));
 $('#print').onclick=()=>{fit();try{window.print()}catch(e){}say('Si la fenêtre d\'impression ne s\'ouvre pas, utilise Ctrl+P (ou Cmd+P) puis « Enregistrer au format PDF ».')};
 async function copy(t,ok){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}say(ok)}
 $('#copy').onclick=()=>copy(`Devis ${numFull()} ${$('#cli').value?'- '+$('#cli').value:''}\n`+rows.map(r=>`${FR[r.cat]||r.cat} : ${r.item} - ${fmt(+r.price)}`).join('\n')+(num($('#rem').value)?`\nRemise : -${fmt(num($('#rem').value))}`:'')+`\nTotal : ${fmt(total())}`,'Récap copié.');
 $('#copyt').onclick=()=>copy(total().toFixed(2).replace('.',','),'Total copié, prêt à coller dans « Montant final ».');
-try{const s=JSON.parse(localStorage.getItem('ggb-devis')||'null');if(s){$('#raw').value=s.raw||'';$('#cli').value=s.cli||'';$('#num').value=s.num||'';$('#val').value=s.val||7;$('#rem').value=s.rem||0;$('#nt').value=s.nt||$('#nt').value;rows=s.rows||[]}}catch(e){}
-$('#lg').src=LOGO;
+try{const s=JSON.parse(localStorage.getItem('ggb-devis')||'null');if(s){$('#raw').value=s.raw||'';$('#cli').value=s.cli||'';$('#num').value=s.num||'';$('#val').value=s.val||7;$('#rem').value=s.rem||0;$('#nt').value=s.nt||$('#nt').value;rows=s.rows||[];if(s.tests)tests=s.tests;if(s.analyse)analyse=s.analyse;$('#flink').value=s.flink||'';$('#fobs').value=s.fobs||'';$('#fby').value=s.fby||''}}catch(e){}
+$('#lg').src=LOGO;$('#lg2').src=LOGO;
 refresh();
 </script>
 </body>
