@@ -62,6 +62,26 @@ body[data-mode=devis] #fiche{display:none}body[data-mode=fiche] #quote{display:n
 :root{--bg:#fff;--panel:#fff;--paper:#fff;--ptx:#171716;--tx:#171716;--mut:#6B6B68;--line:#DDDCE3;--acc:#7C4DE8;--acc2:#5B35C8}
 body{background:#fff}.panel,.no-print,td.x,th.x{display:none!important}.wrap{display:block;padding:14mm 15mm}
 .quote{border:0;padding:0}td input,td textarea{border:0!important;background:transparent!important}}
+
+.pv{display:none}
+@media print{
+.quote textarea,.quote input{display:none!important}
+.pv{display:block;white-space:pre-wrap;overflow-wrap:anywhere}
+td.p .pv{text-align:right;font-weight:600}
+#fiche{font-size:10px;line-height:1.35}
+#fiche .lg{height:38px}
+#fiche .qh{padding-bottom:8px;margin-bottom:6px}
+#fiche .qh h2{font-size:18px}
+#fiche .meta{font-size:11px;line-height:1.5}
+#fiche h3{font-size:9px;margin:11px 0 4px}
+#fiche ul{font-size:10.5px}#fiche li{padding:3px 0}#fiche li b{min-width:100px;font-size:10px}
+#fiche table{font-size:10.5px}#fiche th{font-size:9px;padding:3px 6px}#fiche td{padding:4px 6px}
+#fiche td.t{width:30%}#fiche td.o{width:15%}#fiche td.r{width:72px}
+.chip{font-size:10.5px!important;white-space:nowrap}
+#fiche .pv{font-size:10.5px}
+.sign{margin-top:12px}.verdict{font-size:14px}
+#fiche tr,#fiche li{break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -194,15 +214,16 @@ function applyUD(txt){
  tests=r.tests;analyse=r.analyse;if(r.link)$('#flink').value=r.link;
  $('#fmsg').style.color='var(--ok)';$('#fmsg').textContent='Rapport lu : '+tests.length+' contrôles remplis. Vérifie chaque état (OK / À revoir) avant d\'imprimer.';
  renderFiche();save()}
+const E=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 function renderFiche(){
  $('#fana').innerHTML=analyse.length?analyse.map(a=>'<li>'+a.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</li>').join(''):'<li style="color:var(--mut)">Aucune analyse importée.</li>';
  $('#fcfg').innerHTML=rows.filter(r=>r.cat!=='Custom').map(r=>`<li><b>${FR[r.cat]||r.cat}</b>${r.item.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</li>`).join('')||'<li style="color:var(--mut)">Importe une liste PCPartPicker pour afficher la configuration.</li>';
  const lab={ok:'OK ✓',bad:'À revoir',"":'—'};
- $('#ftests').innerHTML='<table><thead><tr><th>Test</th><th>Outil</th><th>Résultat / valeur</th><th style="text-align:center">État</th><th class="x"></th></tr></thead><tbody>'+tests.map((x,i)=>`<tr><td class="t"><input data-ti="${i}" data-tk="t" value="${x.t.replace(/"/g,'&quot;')}" aria-label="Test"></td><td class="o"><input data-ti="${i}" data-tk="o" value="${x.o.replace(/"/g,'&quot;')}" aria-label="Outil"></td><td><input data-ti="${i}" data-tk="v" value="${x.v.replace(/"/g,'&quot;')}" placeholder="Ex. 74 °C max" aria-label="Résultat"></td><td class="r"><button class="chip ${x.r}" data-tc="${i}">${lab[x.r]}</button></td><td class="x"><button data-td="${i}" aria-label="Retirer le test">×</button></td></tr>`).join('')+'</tbody></table>';
+ $('#ftests').innerHTML='<table><thead><tr><th>Test</th><th>Outil</th><th>Résultat / valeur</th><th style="text-align:center">État</th><th class="x"></th></tr></thead><tbody>'+tests.map((x,i)=>`<tr><td class="t"><textarea rows="1" data-ti="${i}" data-tk="t" aria-label="Test">${E(x.t)}</textarea></td><td class="o"><textarea rows="1" data-ti="${i}" data-tk="o" aria-label="Outil">${E(x.o)}</textarea></td><td><textarea rows="1" data-ti="${i}" data-tk="v" placeholder="Ex. 74 °C max" aria-label="Résultat">${E(x.v)}</textarea></td><td class="r"><button class="chip ${x.r}" data-tc="${i}">${lab[x.r]}</button></td><td class="x"><button data-td="${i}" aria-label="Retirer le test">×</button></td></tr>`).join('')+'</tbody></table>';
  const v=$('#verd'),n=tests.filter(x=>x.r).length;
  const bad=tests.some(x=>x.r==='bad'),all=tests.length&&tests.every(x=>x.r==='ok');
  v.textContent=bad?'À revoir':all?'Conforme':n?'En cours':'En cours';v.className='verdict '+(bad?'bad':all?'ok':'');
-}
+ fit()}
 function head(){
  $('#qn').textContent=numFull()||'—';
  $('#qd').textContent='Date : '+new Intl.DateTimeFormat('fr-BE',{timeZone:'Europe/Brussels',dateStyle:'long'}).format(new Date());
@@ -224,9 +245,11 @@ $('#body').addEventListener('input',e=>{const t=e.target,i=t.dataset.i;if(i===un
 $('#body').addEventListener('click',e=>{const d=e.target.dataset.del;if(d===undefined)return;rows.splice(+d,1);refresh()});
 $('#add').onclick=()=>{rows.push({cat:'Custom',item:'Nouvelle ligne',price:0});refresh()};
 ['#cli','#num','#val','#rem','#nt'].forEach(s=>$(s).addEventListener('input',refresh));
+function prepPrint(){document.querySelectorAll('.quote textarea,.quote input').forEach(el=>{let pv=el.nextElementSibling;if(!pv||!pv.classList.contains('pv')){pv=document.createElement('div');pv.className='pv';el.after(pv)}pv.textContent=el.value})}
+window.addEventListener('beforeprint',prepPrint);
 function mode(m){document.body.dataset.mode=m;$('#tabD').setAttribute('aria-pressed',m==='devis');$('#tabF').setAttribute('aria-pressed',m==='fiche');fit()}
 $('#tabD').onclick=()=>mode('devis');$('#tabF').onclick=()=>mode('fiche');mode('devis');
-$('#ftests').addEventListener('input',e=>{const i=e.target.dataset.ti;if(i===undefined)return;tests[i][e.target.dataset.tk]=e.target.value;renderVerdict();save()});
+$('#ftests').addEventListener('input',e=>{const i=e.target.dataset.ti;if(i===undefined)return;tests[i][e.target.dataset.tk]=e.target.value;renderVerdict();fit();save()});
 function renderVerdict(){const v=$('#verd'),bad=tests.some(x=>x.r==='bad'),all=tests.length&&tests.every(x=>x.r==='ok');v.textContent=bad?'À revoir':all?'Conforme':'En cours';v.className='verdict '+(bad?'bad':all?'ok':'')}
 $('#ftests').addEventListener('click',e=>{const c=e.target.dataset.tc,d=e.target.dataset.td;
  if(c!==undefined){const x=tests[c];x.r=x.r===''?'ok':x.r==='ok'?'bad':'';renderFiche();save()}
@@ -235,7 +258,7 @@ $('#ffile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return
 $('#fread').onclick=()=>applyUD($('#fpaste').value);
 $('#addt').onclick=()=>{tests.push({t:'Nouveau test',o:'',v:'',r:''});renderFiche();save()};
 ['#flink','#fobs','#fby'].forEach(q=>$(q).addEventListener('input',save));
-function imprimer(m){mode(m);requestAnimationFrame(()=>{fit();try{window.print()}catch(e){}say('Si la fenêtre d\'impression ne s\'ouvre pas, utilise Ctrl+P (ou Cmd+P) puis « Enregistrer au format PDF ».')})}
+function imprimer(m){mode(m);requestAnimationFrame(()=>{fit();prepPrint();try{window.print()}catch(e){}say('Si la fenêtre d\'impression ne s\'ouvre pas, utilise Ctrl+P (ou Cmd+P) puis « Enregistrer au format PDF ».')})}
 $('#print').onclick=()=>imprimer('devis');$('#printf').onclick=()=>imprimer('fiche');
 async function copy(t,ok){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}say(ok)}
 $('#copy').onclick=()=>copy(`Devis ${numFull()} ${$('#cli').value?'- '+$('#cli').value:''}\n`+rows.map(r=>`${FR[r.cat]||r.cat} : ${r.item} - ${fmt(+r.price)}`).join('\n')+(num($('#rem').value)?`\nRemise : -${fmt(num($('#rem').value))}`:'')+`\nTotal : ${fmt(total())}`,'Récap copié.');
