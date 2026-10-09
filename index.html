@@ -245,7 +245,11 @@ $('#body').addEventListener('input',e=>{const t=e.target,i=t.dataset.i;if(i===un
 $('#body').addEventListener('click',e=>{const d=e.target.dataset.del;if(d===undefined)return;rows.splice(+d,1);refresh()});
 $('#add').onclick=()=>{rows.push({cat:'Custom',item:'Nouvelle ligne',price:0});refresh()};
 ['#cli','#num','#val','#rem','#nt'].forEach(s=>$(s).addEventListener('input',refresh));
-function prepPrint(){document.querySelectorAll('.quote textarea,.quote input').forEach(el=>{let pv=el.nextElementSibling;if(!pv||!pv.classList.contains('pv')){pv=document.createElement('div');pv.className='pv';el.after(pv)}pv.textContent=el.value})}
+const TITRE0=document.title;
+function setTitle(){const f=document.body.dataset.mode==='fiche',n=numFull(),
+ t=(f?'Test':'Devis')+' '+(n||'GGBUILD');document.title=t.replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,' ').trim()}
+window.addEventListener('afterprint',()=>{document.title=TITRE0});
+function prepPrint(){setTitle();document.querySelectorAll('.quote textarea,.quote input').forEach(el=>{let pv=el.nextElementSibling;if(!pv||!pv.classList.contains('pv')){pv=document.createElement('div');pv.className='pv';el.after(pv)}pv.textContent=el.value})}
 window.addEventListener('beforeprint',prepPrint);
 function mode(m){document.body.dataset.mode=m;$('#tabD').setAttribute('aria-pressed',m==='devis');$('#tabF').setAttribute('aria-pressed',m==='fiche');fit()}
 $('#tabD').onclick=()=>mode('devis');$('#tabF').onclick=()=>mode('fiche');mode('devis');
