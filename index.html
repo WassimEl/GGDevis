@@ -57,9 +57,10 @@ body[data-mode=devis] #fiche{display:none}body[data-mode=fiche] #quote{display:n
 #fiche textarea.f,#fiche input.f{border:0!important;background:transparent!important;padding:2px 0}}
 .note{margin-top:18px;font-size:12px;color:var(--mut);white-space:pre-wrap}
 .empty{padding:34px;text-align:center;color:var(--mut)}
+@page{size:A4;margin:0}
 @media print{
 :root{--bg:#fff;--panel:#fff;--paper:#fff;--ptx:#171716;--tx:#171716;--mut:#6B6B68;--line:#DDDCE3;--acc:#7C4DE8;--acc2:#5B35C8}
-body{background:#fff}.panel,.no-print,td.x,th.x{display:none!important}.wrap{display:block;padding:0}
+body{background:#fff}.panel,.no-print,td.x,th.x{display:none!important}.wrap{display:block;padding:14mm 15mm}
 .quote{border:0;padding:0}td input,td textarea{border:0!important;background:transparent!important}}
 </style>
 </head>
@@ -82,7 +83,8 @@ body{background:#fff}.panel,.no-print,td.x,th.x{display:none!important}.wrap{dis
   <textarea id="nt" style="min-height:70px">Prix susceptibles de varier selon le stock des revendeurs.</textarea>
   <div class="bar">
    <button id="add" class="ghost">Ajouter une ligne</button>
-   <button id="print">Imprimer / PDF</button>
+   <button id="print">Imprimer le devis</button>
+   <button id="printf">Imprimer la fiche de test</button>
    <button id="copy" class="ghost">Copier le récap</button>
    <button id="copyt" class="ghost">Copier le total</button>
    <a class="btn" href="https://fr.buildcores.com/" target="_blank" rel="noopener">Voir en 3D (BuildCores) ↗</a>
@@ -233,7 +235,8 @@ $('#ffile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return
 $('#fread').onclick=()=>applyUD($('#fpaste').value);
 $('#addt').onclick=()=>{tests.push({t:'Nouveau test',o:'',v:'',r:''});renderFiche();save()};
 ['#flink','#fobs','#fby'].forEach(q=>$(q).addEventListener('input',save));
-$('#print').onclick=()=>{fit();try{window.print()}catch(e){}say('Si la fenêtre d\'impression ne s\'ouvre pas, utilise Ctrl+P (ou Cmd+P) puis « Enregistrer au format PDF ».')};
+function imprimer(m){mode(m);requestAnimationFrame(()=>{fit();try{window.print()}catch(e){}say('Si la fenêtre d\'impression ne s\'ouvre pas, utilise Ctrl+P (ou Cmd+P) puis « Enregistrer au format PDF ».')})}
+$('#print').onclick=()=>imprimer('devis');$('#printf').onclick=()=>imprimer('fiche');
 async function copy(t,ok){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}say(ok)}
 $('#copy').onclick=()=>copy(`Devis ${numFull()} ${$('#cli').value?'- '+$('#cli').value:''}\n`+rows.map(r=>`${FR[r.cat]||r.cat} : ${r.item} - ${fmt(+r.price)}`).join('\n')+(num($('#rem').value)?`\nRemise : -${fmt(num($('#rem').value))}`:'')+`\nTotal : ${fmt(total())}`,'Récap copié.');
 $('#copyt').onclick=()=>copy(total().toFixed(2).replace('.',','),'Total copié, prêt à coller dans « Montant final ».');
