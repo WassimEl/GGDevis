@@ -96,8 +96,7 @@ td.p .pv{text-align:right;font-weight:600}
   <div class="two">
    <div><label for="cli">Client</label><input id="cli" placeholder="Nom du client"></div>
    <div><label for="num">N° commande</label><div class="pf"><span>GBCMD-</span><input id="num" placeholder="26-04" aria-label="Numéro de commande"></div></div>
-   <div><label for="val">Validité (jours)</label><input id="val" type="number" min="1" value="7"></div>
-   <div><label for="rem">Remise (€)</label><input id="rem" inputmode="decimal" value="0"></div>
+      <div><label for="rem">Remise (€)</label><input id="rem" inputmode="decimal" value="0"></div>
   </div>
   <label for="nt">Mention en bas du devis</label>
   <textarea id="nt" style="min-height:70px">Prix susceptibles de varier selon le stock des revendeurs.</textarea>
@@ -114,7 +113,7 @@ td.p .pv{text-align:right;font-weight:600}
  <section class="quote" id="quote" aria-label="Devis">
   <div class="qh">
    <div class="brand"><img id="lg" class="lg" alt="Logo GGBUILD"><div><h2>GGBUILD</h2><small>PC sur mesure · Charleroi</small></div></div>
-   <div class="meta"><div>Devis <b id="qn">—</b></div><div id="qd"></div><div id="qc"></div><div id="qv"></div></div>
+   <div class="meta"><div>Devis <b id="qn">—</b></div><div id="qd"></div><div id="qc"></div></div>
   </div>
   <div id="body"></div>
  </section>
@@ -229,9 +228,8 @@ function head(){
  $('#qd').textContent='Date : '+new Intl.DateTimeFormat('fr-BE',{timeZone:'Europe/Brussels',dateStyle:'long'}).format(new Date());
  $('#qc').textContent=$('#cli').value?'Client : '+$('#cli').value:'';
  $('#fn').textContent=numFull()||'—';$('#fd').textContent=$('#qd').textContent;$('#fc').textContent=$('#qc').textContent;
- $('#qv').textContent=$('#val').value?'Valable '+$('#val').value+' jours':'';
 }
-function save(){try{localStorage.setItem('ggb-devis',JSON.stringify({raw:$('#raw').value,cli:$('#cli').value,num:$('#num').value,val:$('#val').value,rem:$('#rem').value,nt:$('#nt').value,rows,tests,analyse,flink:$('#flink').value,fobs:$('#fobs').value,fby:$('#fby').value}))}catch(e){}}
+function save(){try{localStorage.setItem('ggb-devis',JSON.stringify({raw:$('#raw').value,cli:$('#cli').value,num:$('#num').value,rem:$('#rem').value,nt:$('#nt').value,rows,tests,analyse,flink:$('#flink').value,fobs:$('#fobs').value,fby:$('#fby').value}))}catch(e){}}
 function say(t,err){const m=$('#msg');m.textContent=t;m.className=err?'err':''}
 function refresh(){head();render();renderFiche();fit();save()}
 window.addEventListener('beforeprint',fit);window.addEventListener('resize',fit);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit)
@@ -244,7 +242,7 @@ $('#body').addEventListener('input',e=>{const t=e.target,i=t.dataset.i;if(i===un
  const tt=$('#tt');if(tt)tt.textContent=fmt(total());save()});
 $('#body').addEventListener('click',e=>{const d=e.target.dataset.del;if(d===undefined)return;rows.splice(+d,1);refresh()});
 $('#add').onclick=()=>{rows.push({cat:'Custom',item:'Nouvelle ligne',price:0});refresh()};
-['#cli','#num','#val','#rem','#nt'].forEach(s=>$(s).addEventListener('input',refresh));
+['#cli','#num','#rem','#nt'].forEach(s=>$(s).addEventListener('input',refresh));
 const TITRE0=document.title;
 function setTitle(){const f=document.body.dataset.mode==='fiche',n=numFull(),
  t=(f?'Test':'Devis')+' '+(n||'GGBUILD');document.title=t.replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,' ').trim()}
@@ -267,7 +265,7 @@ $('#print').onclick=()=>imprimer('devis');$('#printf').onclick=()=>imprimer('fic
 async function copy(t,ok){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}say(ok)}
 $('#copy').onclick=()=>copy(`Devis ${numFull()} ${$('#cli').value?'- '+$('#cli').value:''}\n`+rows.map(r=>`${FR[r.cat]||r.cat} : ${r.item} - ${fmt(+r.price)}`).join('\n')+(num($('#rem').value)?`\nRemise : -${fmt(num($('#rem').value))}`:'')+`\nTotal : ${fmt(total())}`,'Récap copié.');
 $('#copyt').onclick=()=>copy(total().toFixed(2).replace('.',','),'Total copié, prêt à coller dans « Montant final ».');
-try{const s=JSON.parse(localStorage.getItem('ggb-devis')||'null');if(s){$('#raw').value=s.raw||'';$('#cli').value=s.cli||'';$('#num').value=s.num||'';$('#val').value=s.val||7;$('#rem').value=s.rem||0;$('#nt').value=s.nt||$('#nt').value;rows=s.rows||[];if(s.tests)tests=s.tests;if(s.analyse)analyse=s.analyse;$('#flink').value=s.flink||'';$('#fobs').value=s.fobs||'';$('#fby').value=s.fby||''}}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('ggb-devis')||'null');if(s){$('#raw').value=s.raw||'';$('#cli').value=s.cli||'';$('#num').value=s.num||'';$('#rem').value=s.rem||0;$('#nt').value=s.nt||$('#nt').value;rows=s.rows||[];if(s.tests)tests=s.tests;if(s.analyse)analyse=s.analyse;$('#flink').value=s.flink||'';$('#fobs').value=s.fobs||'';$('#fby').value=s.fby||''}}catch(e){}
 $('#lg').src=LOGO;$('#lg2').src=LOGO;
 refresh();
 </script>
